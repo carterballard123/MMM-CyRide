@@ -5,6 +5,13 @@ const getData = async (self) => {
     const response = await fetch(
       `https://mycyride.com/Stop/${self.STOP_ID}/Arrivals?customerID=${self.CUSTOMER_ID}`
     );
+    const contentType = response.headers.get("content-type") || "";
+    if (!contentType.includes("application/json")) {
+      return {
+        error: true,
+        message: "CyRide returned a non-JSON response"
+      };
+    }
     const arrivals = await response.json();
     return arrivals;
   } catch (e) {

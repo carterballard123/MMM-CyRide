@@ -8,9 +8,16 @@ Module.register("MMM-CyRide", {
     }, 5000); // cycle displayed data every 5 seconds
   },
   getDom: async function () {
-    if (!Array.isArray(this.data)) return;
     var wrapper = document.createElement("div");
     wrapper.style = "text-align:left;max-width:350px;";
+
+    if (this.error) {
+      wrapper.innerHTML = this.error;
+      return wrapper;
+    }
+
+    if (!Array.isArray(this.data)) return wrapper;
+
     const title = document.createElement("h6");
     title.innerHTML = "CYRIDE | UPCOMING STOPS";
     title.style = "margin:0px;";
@@ -60,8 +67,15 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
     let upcomingBusses = [];
+    if (payload && payload.error) {
+      this.data = null;
+      this.error = payload.message;
+      this.updateDom();
+      return;
+    }
     if (!payload) {
       this.data = null;
+      this.error = "Unable to load CyRide arrivals";
       this.updateDom();
       return;
     }
