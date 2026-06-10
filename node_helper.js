@@ -32,6 +32,8 @@ module.exports = NodeHelper.create({
     }, 1 * 60 * 1000); // gets data from cyride every one minute
   },
   socketNotificationReceived: async function (notification, payload) {
+    console.log("MMM-CyRide helper received notification:", notification, payload);
+    
     if (notification !== "MMM-CYRIDE-SET_CYRIDE_CONFIG") return;
     this.STOP_ID = payload.stopID;
     this.CUSTOMER_ID = payload.customerID;
