@@ -33,12 +33,12 @@ module.exports = NodeHelper.create({
   },
   socketNotificationReceived: async function (notification, payload) {
     console.log("MMM-CyRide helper received notification:", notification, payload);
-    
+
     if (notification !== "MMM-CYRIDE-SET_CYRIDE_CONFIG") return;
     this.STOP_ID = payload.stopID;
     this.CUSTOMER_ID = payload.customerID;
     const upcomingStopsData = await getData(this); // get data on initial load
-    // console.log("MMM-CyRide sending payload:", upcomingStopsData); debug log to see raw payload from node_helper before sending to main module
+    console.log("MMM-CyRide sending payload:", upcomingStopsData); // debug log to see raw payload from node_helper before sending to main module
     this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
   }
 });
