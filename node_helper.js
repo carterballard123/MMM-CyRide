@@ -2,11 +2,13 @@ var NodeHelper = require("node_helper");
 const fetch = require("node-fetch");
 const getData = async (self) => {
   try {
+    console.log("MMM-CyRide fetching arrivals for stop:", self.STOP_ID);
     const response = await fetch(
       `https://mycyride.com/api/rtpi?path=${encodeURIComponent(
         `stops/rtpi/${self.STOP_ID}/arrivals`
       )}`
     );
+    console.log("MMM-CyRide fetch status:", response.status, response.headers.get("content-type"));
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return {
@@ -17,7 +19,7 @@ const getData = async (self) => {
     const arrivals = await response.json();
     return arrivals;
   } catch (e) {
-    console.error(e);
+    console.error("MMM-CyRide fetch failed:", e);
     return null;
   }
 };
