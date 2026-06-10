@@ -16,7 +16,10 @@ Module.register("MMM-CyRide", {
       return wrapper;
     }
 
-    if (!Array.isArray(this.data)) return wrapper;
+    if (!Array.isArray(this.data)) {
+      wrapper.innerHTML = "Waiting for CyRide data...";
+      return wrapper;
+    }
 
     const title = document.createElement("h6");
     title.innerHTML = "CYRIDE | UPCOMING STOPS";
