@@ -8,7 +8,11 @@ const getData = async (self) => {
         `stops/rtpi/${self.STOP_ID}/arrivals`
       )}`
     );
-    console.log("MMM-CyRide fetch status:", response.status, response.headers.get("content-type"));
+    console.log(
+      "MMM-CyRide fetch status:",
+      response.status,
+      response.headers.get("content-type")
+    );
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return {
@@ -17,7 +21,14 @@ const getData = async (self) => {
       };
     }
     const arrivals = await response.json();
-    return arrivals;
+    return arrivals.map((arrival) => ({
+      route: {
+        name: arrival.route && arrival.route.name,
+        color: arrival.route && arrival.route.color
+      },
+      secondsToArrival: arrival.secondsToArrival,
+      schedulePrediction: arrival.schedulePrediction
+    }));
   } catch (e) {
     console.error("MMM-CyRide fetch failed:", e);
     return null;
@@ -34,13 +45,21 @@ module.exports = NodeHelper.create({
     }, 1 * 60 * 1000); // gets data from cyride every one minute
   },
   socketNotificationReceived: async function (notification, payload) {
-    console.log("MMM-CyRide helper received notification:", notification, payload);
+    console.log(
+      "MMM-CyRide helper received notification:",
+      notification,
+      payload
+    );
 
     if (notification !== "MMM-CYRIDE-SET_CYRIDE_CONFIG") return;
     this.STOP_ID = payload.stopID;
     this.CUSTOMER_ID = payload.customerID;
     const upcomingStopsData = await getData(this); // get data on initial load
-    console.log("MMM-CyRide sending payload:", upcomingStopsData); // debug log to see raw payload from node_helper before sending to main module
+    console.log(
+      "MMM-CyRide sending payload:",
+      Array.isArray(upcomingStopsData),
+      upcomingStopsData && upcomingStopsData.length
+    );
     this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
   }
 });
