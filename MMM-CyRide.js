@@ -85,23 +85,38 @@ Module.register("MMM-CyRide", {
       this.updateDom();
       return;
     }
-    payload.forEach((routePayload) => {
-      upcomingBusses.push(
-        routePayload.Arrivals.filter(({ ArriveTime }, i) => ArriveTime && i < 2)
-      );
-    });
-    let stops = upcomingBusses.map((busStops) => {
-      let minutesTill = [];
-      busStops.forEach(({ Minutes }) => {
-        minutesTill.push(Minutes);
+    const arrivalsByRoute = {};
+
+    // The current CyRide API returns a flat list of arrivals, so group them by route
+    // before passing the data to the existing display code.
+    payload.forEach((arrival) => {
+      const routeName = arrival.route && arrival.route.name;
+      if (!routeName || typeof arrival.secondsToArrival !== "number") return;
+
+      const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
+
+      // Create one display group per route the first time we see that route.
+      if (!arrivalsByRoute[routeName]) {
+        arrivalsByRoute[routeName] = {
+          routeName: routeName,
+          color: arrival.route.color,
+          stops: []
+        };
+      }
+
+      arrivalsByRoute[routeName].stops.push({
+        Time: minutes,
+        Minutes: minutes,
+        ArriveTime: arrival.schedulePrediction ? "scheduled" : "live",
+        IsLastStop: false
       });
-      return {
-        routeName: busStops[0].RouteName,
-        minutesUntil: Math.min(...minutesTill),
-        stops: busStops
-      };
     });
-    this.data = stops;
+
+    // Keep the next two arrivals per route, matching the module's original behavior.
+    this.data = Object.values(arrivalsByRoute).map((route) => {
+      route.stops = route.stops.slice(0, 2);
+      return route;
+    });
   }
 });
 const getColor = (routeName) => {
