@@ -34,6 +34,7 @@ module.exports = NodeHelper.create({
     this.STOP_ID = payload.stopID;
     this.CUSTOMER_ID = payload.customerID;
     const upcomingStopsData = await getData(this); // get data on initial load
+    console.log("MMM-CyRide sending payload:", upcomingStopsData);
     this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
   }
 });
