@@ -70,9 +70,6 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
-    this.error = `Received ${Array.isArray(payload) ? payload.length : "non-array"} CyRide arrivals`;
-    this.updateDom();
-
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
@@ -92,6 +89,7 @@ Module.register("MMM-CyRide", {
       this.updateDom();
       return;
     }
+    this.error = null;
     const arrivalsByRoute = {};
 
     // The current CyRide API returns a flat list of arrivals, so group them by route
