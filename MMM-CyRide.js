@@ -117,6 +117,8 @@ Module.register("MMM-CyRide", {
       route.stops = route.stops.slice(0, 2);
       return route;
     });
+
+    this.updateDom();
   }
 });
 const getColor = (routeName) => {
