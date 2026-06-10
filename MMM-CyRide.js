@@ -7,7 +7,7 @@ Module.register("MMM-CyRide", {
       this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
   },
-  getDom: async function () {
+  getDom: function () {
     var wrapper = document.createElement("div");
     wrapper.style = "text-align:left;max-width:350px;";
 
