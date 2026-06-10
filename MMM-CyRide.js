@@ -70,6 +70,9 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
+    this.error = `Received ${Array.isArray(payload) ? payload.length : "non-array"} CyRide arrivals`;
+    this.updateDom();
+
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
