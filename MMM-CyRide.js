@@ -73,29 +73,6 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
-    this.error = `CyRide payload received: ${Array.isArray(payload) ? payload.length : "non-array"}`;
-    this.updateDom();
-
-    // Temporary render test: proves the frontend can display route data once a
-    // CyRide socket notification arrives. Remove this block after testing.
-    this.error = null;
-    this.data = [
-      {
-        routeName: "Debug Route",
-        color: "#00ff00",
-        stops: [
-          {
-            Time: 1,
-            Minutes: 1,
-            ArriveTime: "debug",
-            IsLastStop: false
-          }
-        ]
-      }
-    ];
-    this.updateDom();
-    return;
-
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
@@ -150,7 +127,11 @@ Module.register("MMM-CyRide", {
         return route;
       });
 
+      // Temporary parser checkpoint: confirms the API payload was converted
+      // into route groups before we debug the final rendering step.
+      this.error = `Parsed ${this.data.length} CyRide routes`;
       this.updateDom();
+      return;
     } catch (e) {
       this.data = null;
       this.error = `CyRide parser error: ${e.message}`;
