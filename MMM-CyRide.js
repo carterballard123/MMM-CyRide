@@ -73,6 +73,14 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
+    // Temporary socket checkpoint: confirms the browser-side module receives
+    // the helper payload during the current MagicMirror run.
+    this.error = `Reached CyRide handler with ${
+      Array.isArray(payload) ? payload.length : "non-array"
+    } arrivals`;
+    this.updateDom();
+    return;
+
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
