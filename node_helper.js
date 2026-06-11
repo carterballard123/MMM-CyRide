@@ -40,7 +40,12 @@ module.exports = NodeHelper.create({
     setInterval(async () => {
       if (this.STOP_ID && this.CUSTOMER_ID) {
         const upcomingStopsData = await getData(this);
-        this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
+console.log(
+  "MMM-CyRide interval sending payload:",
+  Array.isArray(upcomingStopsData),
+  upcomingStopsData && upcomingStopsData.length
+);
+this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
       }
     }, 1 * 60 * 1000); // gets data from cyride every one minute
   },
