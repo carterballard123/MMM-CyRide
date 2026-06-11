@@ -123,6 +123,7 @@ Module.register("MMM-CyRide", {
       return route;
     });
 
+    this.error = `Parsed ${this.data.length} CyRide routes`;
     this.updateDom();
   }
 });
