@@ -2,6 +2,7 @@ Module.register("MMM-CyRide", {
   defaults: { stopID: "5108903", customerID: "187" },
   start: function () {
     this.page = 0;
+    this.cyRideRoutes = null;
     this.error = "Frontend HTTP build started";
     this.hasRequestedCyRideData = false;
 
@@ -9,7 +10,7 @@ Module.register("MMM-CyRide", {
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
     this.loadCyRideData = async () => {
       try {
-        this.data = null;
+        this.cyRideRoutes = null;
         this.error = "Calling local CyRide route";
         this.updateDom();
 
@@ -20,26 +21,16 @@ Module.register("MMM-CyRide", {
 
         const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
         const payload = await response.json();
-
-        // Temporary HTTP checkpoint: proves the browser frontend can call the
-        // local helper route before we debug parsing/rendering again.
-        this.data = null;
-        this.error = `HTTP route returned ${
-          Array.isArray(payload) ? payload.length : "non-array"
-        } arrivals`;
-        this.updateDom();
-        return;
-
         this.handleCyRidePayload(payload);
       } catch (e) {
-        this.data = null;
+        this.cyRideRoutes = null;
         this.error = `Unable to load CyRide arrivals: ${e.message}`;
         this.updateDom();
       }
     };
 
     setInterval(() => {
-      if (Array.isArray(this.data)) this.updateDom(1000);
+      if (Array.isArray(this.cyRideRoutes)) this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
   },
   getDom: function () {
@@ -59,7 +50,7 @@ Module.register("MMM-CyRide", {
       return wrapper;
     }
 
-    if (!Array.isArray(this.data)) {
+    if (!Array.isArray(this.cyRideRoutes)) {
       wrapper.innerHTML = "Waiting for CyRide data... frontend debug build";
       return wrapper;
     }
@@ -69,7 +60,7 @@ Module.register("MMM-CyRide", {
     title.style = "margin:0px;";
     wrapper.appendChild(title);
 
-    this.data.map((route, i) => {
+    this.cyRideRoutes.map((route, i) => {
       if (i % 2 !== this.page) return;
       let upcomingStops = [];
       route.stops.forEach((s) => {
@@ -115,14 +106,14 @@ Module.register("MMM-CyRide", {
 
     try {
       if (payload && payload.error) {
-        this.data = null;
+        this.cyRideRoutes = null;
         this.error = payload.message;
         this.updateDom();
         return;
       }
 
       if (!Array.isArray(payload)) {
-        this.data = null;
+        this.cyRideRoutes = null;
         this.error = "CyRide payload was not an array";
         this.updateDom();
         return;
@@ -161,7 +152,7 @@ Module.register("MMM-CyRide", {
 
       stage = "saving parsed data";
       // Keep the next two arrivals per route, matching the module's original behavior.
-      this.data = groupedRoutes.map((route) => ({
+      this.cyRideRoutes = groupedRoutes.map((route) => ({
         routeName: route.routeName,
         color: route.color,
         stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
@@ -171,7 +162,7 @@ Module.register("MMM-CyRide", {
       this.updateDom();
       return;
     } catch (e) {
-      this.data = null;
+      this.cyRideRoutes = null;
       this.error = `CyRide frontend error at ${stage}: ${e.message}`;
       this.updateDom();
     }
