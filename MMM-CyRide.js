@@ -7,12 +7,16 @@ Module.register("MMM-CyRide", {
     // Fetch through the local MagicMirror helper route. This keeps the CyRide
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
     this.loadCyRideData = async () => {
-      const params = new URLSearchParams({
-        stopID: this.config.stopID,
-        customerID: this.config.customerID
-      });
-
       try {
+        this.data = null;
+        this.error = "Calling local CyRide route";
+        this.updateDom();
+
+        const params = new URLSearchParams({
+          stopID: this.config.stopID,
+          customerID: this.config.customerID
+        });
+
         const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
         const payload = await response.json();
 
