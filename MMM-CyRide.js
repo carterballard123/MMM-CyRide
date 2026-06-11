@@ -110,9 +110,11 @@ Module.register("MMM-CyRide", {
 
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
+      let validArrivals = 0;
       payload.forEach((arrival) => {
         const routeName = arrival.route && arrival.route.name;
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
+        validArrivals += 1;
 
         const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
 
@@ -132,6 +134,12 @@ Module.register("MMM-CyRide", {
           IsLastStop: false
         });
       });
+
+      // Temporary checkpoint: confirms the grouping loop processed arrivals.
+      this.error = `Grouped ${validArrivals} valid arrivals into ${
+        Object.keys(arrivalsByRoute).length
+      } routes`;
+      this.updateDom();
 
       // Keep the next two arrivals per route, matching the module's original behavior.
       this.data = Object.values(arrivalsByRoute).map((route) => {
