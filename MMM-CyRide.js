@@ -15,6 +15,16 @@ Module.register("MMM-CyRide", {
       try {
         const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
         const payload = await response.json();
+
+        // Temporary HTTP checkpoint: proves the browser frontend can call the
+        // local helper route before we debug parsing/rendering again.
+        this.data = null;
+        this.error = `HTTP route returned ${
+          Array.isArray(payload) ? payload.length : "non-array"
+        } arrivals`;
+        this.updateDom();
+        return;
+
         this.handleCyRidePayload(payload);
       } catch (e) {
         this.data = null;
