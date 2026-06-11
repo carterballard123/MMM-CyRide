@@ -4,22 +4,32 @@ Module.register("MMM-CyRide", {
     this.page = 0;
     this.error = null;
 
-    // Ask the helper for data explicitly. This makes the frontend/helper flow
-    // easier to debug than relying only on helper-side push timing.
-    this.requestCyRideData = () => {
-      this.sendSocketNotification("MMM-CYRIDE-REQUEST_DATA", this.config);
+    // Fetch through the local MagicMirror helper route. This keeps the CyRide
+    // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
+    this.loadCyRideData = async () => {
+      const params = new URLSearchParams({
+        stopID: this.config.stopID,
+        customerID: this.config.customerID
+      });
+
+      try {
+        const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
+        const payload = await response.json();
+        this.handleCyRidePayload(payload);
+      } catch (e) {
+        this.data = null;
+        this.error = `Unable to load CyRide arrivals: ${e.message}`;
+        this.updateDom();
+      }
     };
 
     setTimeout(() => {
-      this.sendSocketNotification("MMM-CYRIDE-SET_CYRIDE_CONFIG", this.config);
-      this.requestCyRideData();
+      this.loadCyRideData();
     }, 1000);
 
-    // While the screen is still waiting, keep asking the helper for data.
-    // Once data arrives, the normal helper interval can keep it fresh.
     setInterval(() => {
-      if (!Array.isArray(this.data)) this.requestCyRideData();
-    }, 10000);
+      this.loadCyRideData();
+    }, 1 * 60 * 1000);
 
     setInterval(() => {
       this.updateDom(1000);
@@ -85,38 +95,10 @@ Module.register("MMM-CyRide", {
     else if (this.page === 0) this.page = 1;
     return wrapper;
   },
-  socketNotificationReceived: function (notification, payload) {
-    // Track how far the frontend gets so runtime errors show a useful message.
-    let stage = "handler entered";
+  handleCyRidePayload: function (payload) {
+    let stage = "checking payload";
 
     try {
-      stage = `received ${notification}`;
-
-      if (notification === "MMM-CYRIDE-DEBUG_PONG") {
-        this.data = null;
-        this.error = payload;
-        this.updateDom();
-        return;
-      }
-
-      if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
-
-      // Temporary socket heartbeat: proves whether the frontend receives the
-      // helper payload before we debug parsing or rendering.
-      this.data = null;
-      this.error = `Frontend received CyRide payload: ${
-        Array.isArray(payload) ? payload.length : "not an array"
-      }`;
-      this.updateDom();
-      return;
-
-      stage = "checking payload";
-      console.log(
-        "MMM-CyRide received payload:",
-        Array.isArray(payload),
-        payload && payload.length
-      );
-
       if (payload && payload.error) {
         this.data = null;
         this.error = payload.message;
@@ -170,11 +152,7 @@ Module.register("MMM-CyRide", {
         stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
       }));
 
-      // Temporary checkpoint: confirms this.data has the route array shape
-      // expected by getDom before we allow the normal renderer to run.
-      this.error = `Data array ready: ${Array.isArray(this.data)} with ${
-        this.data.length
-      } routes`;
+      this.error = null;
       this.updateDom();
       return;
     } catch (e) {

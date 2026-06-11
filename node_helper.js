@@ -37,60 +37,26 @@ const getData = async (self) => {
 module.exports = NodeHelper.create({
   start: function () {
     console.log("Starting module: " + this.name);
-    setInterval(async () => {
-      if (this.STOP_ID && this.CUSTOMER_ID) {
-        const upcomingStopsData = await getData(this);
-        console.log(
-          "MMM-CyRide interval sending payload:",
-          Array.isArray(upcomingStopsData),
-          upcomingStopsData && upcomingStopsData.length
-        );
-        this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
-      }
-    }, 1 * 60 * 1000); // gets data from cyride every one minute
-  },
-  socketNotificationReceived: async function (notification, payload) {
-    console.log(
-      "MMM-CyRide helper received notification:",
-      notification,
-      payload
-    );
+    this.expressApp.get("/MMM-CyRide/arrivals", async (req, res) => {
+      const stopID = req.query.stopID;
+      const customerID = req.query.customerID;
 
-    if (notification === "MMM-CYRIDE-SET_CYRIDE_CONFIG") {
-      this.STOP_ID = payload.stopID;
-      this.CUSTOMER_ID = payload.customerID;
-      const upcomingStopsData = await getData(this); // get data on initial load
-      console.log(
-        "MMM-CyRide sending payload:",
-        Array.isArray(upcomingStopsData),
-        upcomingStopsData && upcomingStopsData.length
-      );
-      this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
-      return;
-    }
-
-    if (notification === "MMM-CYRIDE-REQUEST_DATA") {
-      this.sendSocketNotification(
-        "MMM-CYRIDE-DEBUG_PONG",
-        "Helper-to-frontend socket works"
-      );
-
-      // The frontend may ask again while it is still waiting. Refresh the
-      // config from the payload so the request works even if it arrives early.
-      if (payload) {
-        this.STOP_ID = payload.stopID;
-        this.CUSTOMER_ID = payload.customerID;
+      if (!stopID || !customerID) {
+        res.status(400).json({
+          error: true,
+          message: "Missing CyRide stopID or customerID"
+        });
+        return;
       }
 
-      if (!this.STOP_ID || !this.CUSTOMER_ID) return;
+      // The browser calls this local route; the helper still owns the external
+      // CyRide API request so the frontend never talks to MyCyRide directly.
+      const upcomingStopsData = await getData({
+        STOP_ID: stopID,
+        CUSTOMER_ID: customerID
+      });
 
-      const upcomingStopsData = await getData(this);
-      console.log(
-        "MMM-CyRide request sending payload:",
-        Array.isArray(upcomingStopsData),
-        upcomingStopsData && upcomingStopsData.length
-      );
-      this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
-    }
+      res.json(upcomingStopsData);
+    });
   }
 });
