@@ -97,6 +97,10 @@ Module.register("MMM-CyRide", {
       return;
     }
 
+    // Temporary checkpoint: confirms payload passed the early error/null checks.
+    this.error = "Reached parser try block";
+    this.updateDom();
+
     try {
       this.error = null;
       const arrivalsByRoute = {};
