@@ -1,12 +1,14 @@
 # MMM-CyRide
 
-A [Magic Mirror](https://github.com/MichMich/MagicMirror) module to show upcoming CyRide routes near your location. CyRide is the public bussing system in Ames, IA home of Iowa State University. Go Cyclones!
+A [Magic Mirror](https://github.com/MichMich/MagicMirror) module to show upcoming CyRide routes near your location. CyRide is the public bus system in Ames, IA home of Iowa State University. Go Cyclones!
+
+> **Modernized fork:** This version restores live CyRide arrival support using the current MyCyRide RTPI API. Older versions of this module used an endpoint that now returns the MyCyRide web app HTML instead of arrival JSON.
 
 ## Installation
 
 To install MMM-CyRide, open the modules folder of your `MagicMirror` installation. Run the following commands:
 
-- `git clone https://github.com/patrickdemers6/MMM-CyRide.git`
+- `git clone https://github.com/carterballard123/MMM-CyRide.git`
 - `cd MMM-CyRide`
 - `npm install`
 
@@ -37,7 +39,7 @@ Add the following code to your Magic Mirror's `config.js` file's `modules` array
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
 
 ### Find your Stop ID
-To find your stop's ID, use this website [on this website](https://mycyride.com/arrivals). Choose a route that passes the relevant stop, then choose your stop from the list of stops. The stop ID is listed in bold after choosing a route and stop. In the image below, the stop ID is 2520.
+To find your stop ID, visit [mycyride.com/arrivals](https://mycyride.com/arrivals). Choose a route that passes your stop, then choose the stop from the list. The stop ID is listed in bold after choosing a route and stop. In the image below, the stop ID is 2520.
 
 ![CyRide Route Finder Website Image](EstimatedArrivalTimes.png)
 
