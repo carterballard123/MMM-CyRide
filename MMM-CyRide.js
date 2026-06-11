@@ -3,16 +3,21 @@ Module.register("MMM-CyRide", {
   start: function () {
     this.page = 0;
     this.cyRideRoutes = null;
-    this.error = "Frontend HTTP build started";
+    this.error = null;
     this.hasRequestedCyRideData = false;
+    this.isLoadingCyRideData = false;
 
     // Fetch through the local MagicMirror helper route. This keeps the CyRide
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
     this.loadCyRideData = async () => {
+      if (this.isLoadingCyRideData) return;
+      this.isLoadingCyRideData = true;
+
       try {
-        this.cyRideRoutes = null;
-        this.error = "Calling local CyRide route";
-        this.updateDom();
+        if (!Array.isArray(this.cyRideRoutes)) {
+          this.error = "Loading CyRide arrivals...";
+          this.updateDom();
+        }
 
         const params = new URLSearchParams({
           stopID: this.config.stopID,
@@ -23,11 +28,19 @@ Module.register("MMM-CyRide", {
         const payload = await response.json();
         this.handleCyRidePayload(payload);
       } catch (e) {
-        this.cyRideRoutes = null;
-        this.error = `Unable to load CyRide arrivals: ${e.message}`;
+        if (!Array.isArray(this.cyRideRoutes)) this.cyRideRoutes = null;
+        this.error = Array.isArray(this.cyRideRoutes)
+          ? null
+          : `Unable to load CyRide arrivals: ${e.message}`;
         this.updateDom();
+      } finally {
+        this.isLoadingCyRideData = false;
       }
     };
+
+    setInterval(() => {
+      this.loadCyRideData();
+    }, 1 * 60 * 1000);
 
     setInterval(() => {
       if (Array.isArray(this.cyRideRoutes)) this.updateDom(1000);
@@ -41,7 +54,6 @@ Module.register("MMM-CyRide", {
     // text, so start the local-route fetch from here exactly once.
     if (!this.hasRequestedCyRideData) {
       this.hasRequestedCyRideData = true;
-      this.error = "getDom started local CyRide fetch";
       this.loadCyRideData();
     }
 
