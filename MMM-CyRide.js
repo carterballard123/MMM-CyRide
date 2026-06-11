@@ -78,6 +78,15 @@ Module.register("MMM-CyRide", {
       stage = `received ${notification}`;
       if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
+      // Temporary socket heartbeat: proves whether the frontend receives the
+      // helper payload before we debug parsing or rendering.
+      this.data = null;
+      this.error = `Frontend received CyRide payload: ${
+        Array.isArray(payload) ? payload.length : "not an array"
+      }`;
+      this.updateDom();
+      return;
+
       stage = "checking payload";
       console.log(
         "MMM-CyRide received payload:",
