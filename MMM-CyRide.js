@@ -141,8 +141,14 @@ Module.register("MMM-CyRide", {
       } routes`;
       this.updateDom();
 
+      const groupedRoutes = Object.values(arrivalsByRoute);
+
+      // Temporary checkpoint: confirms the grouped route object became an array.
+      this.error = `Object.values produced ${groupedRoutes.length} routes`;
+      this.updateDom();
+
       // Keep the next two arrivals per route, matching the module's original behavior.
-      this.data = Object.values(arrivalsByRoute).map((route) => {
+      this.data = groupedRoutes.map((route) => {
         route.stops = route.stops.slice(0, 2);
         return route;
       });
