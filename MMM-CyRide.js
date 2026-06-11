@@ -2,7 +2,7 @@ Module.register("MMM-CyRide", {
   defaults: { stopID: "5108903", customerID: "187" },
   start: function () {
     this.page = 0;
-    this.error = null;
+    this.error = "Frontend HTTP build started";
 
     // Fetch through the local MagicMirror helper route. This keeps the CyRide
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
