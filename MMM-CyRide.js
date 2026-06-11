@@ -37,8 +37,6 @@ Module.register("MMM-CyRide", {
       }
     };
 
-    this.loadCyRideData();
-
     setInterval(() => {
       this.loadCyRideData();
     }, 1 * 60 * 1000);
@@ -46,6 +44,11 @@ Module.register("MMM-CyRide", {
     setInterval(() => {
       this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
+  },
+  notificationReceived: function (notification) {
+    if (notification === "DOM_OBJECTS_CREATED") {
+      this.loadCyRideData();
+    }
   },
   getDom: function () {
     var wrapper = document.createElement("div");
