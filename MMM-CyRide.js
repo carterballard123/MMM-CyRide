@@ -102,8 +102,11 @@ Module.register("MMM-CyRide", {
     this.updateDom();
 
     try {
-      this.error = null;
       const arrivalsByRoute = {};
+
+      // Temporary checkpoint: confirms execution entered the parser body.
+      this.error = "Inside parser try block";
+      this.updateDom();
 
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
