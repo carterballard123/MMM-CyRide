@@ -2,7 +2,10 @@ Module.register("MMM-CyRide", {
   defaults: { stopID: "5108903", customerID: "187" },
   start: function () {
     this.page = 0;
-    this.sendSocketNotification("MMM-CYRIDE-SET_CYRIDE_CONFIG", this.config);
+    this.error = null;
+    setTimeout(() => {
+      this.sendSocketNotification("MMM-CYRIDE-SET_CYRIDE_CONFIG", this.config);
+    }, 1000);
     setInterval(() => {
       this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
