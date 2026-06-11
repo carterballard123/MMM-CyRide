@@ -148,10 +148,11 @@ Module.register("MMM-CyRide", {
       this.updateDom();
 
       // Keep the next two arrivals per route, matching the module's original behavior.
-      this.data = groupedRoutes.map((route) => {
-        route.stops = route.stops.slice(0, 2);
-        return route;
-      });
+      this.data = groupedRoutes.map((route) => ({
+        routeName: route.routeName,
+        color: route.color,
+        stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
+      }));
 
       // Temporary checkpoint: confirms this.data has the route array shape
       // expected by getDom before we allow the normal renderer to run.
