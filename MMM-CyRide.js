@@ -147,6 +147,14 @@ Module.register("MMM-CyRide", {
         return route;
       });
 
+      // Temporary checkpoint: confirms this.data has the route array shape
+      // expected by getDom before we allow the normal renderer to run.
+      this.error = `Data array ready: ${Array.isArray(this.data)} with ${
+        this.data.length
+      } routes`;
+      this.updateDom();
+      return;
+
       // Temporary parser checkpoint: confirms the API payload was converted
       // into route groups before we debug the final rendering step.
       this.error = `Parsed ${this.data.length} CyRide routes`;
