@@ -1,0 +1,10 @@
+{
+  "name": "mmm-cyride",
+  "version": "1.0.0",
+  "description": "MagicMirror module for upcoming CyRide bus arrivals in Ames, Iowa.",
+  "main": "MMM-CyRide.js",
+  "license": "MIT",
+  "dependencies": {
+    "node-fetch": "^2.7.0"
+  }
+}

@@ -4,11 +4,10 @@ Module.register("MMM-CyRide", {
     this.page = 0;
     this.cyRideRoutes = null;
     this.error = null;
-    this.hasRequestedCyRideData = false;
     this.isLoadingCyRideData = false;
 
-    // Fetch through the local MagicMirror helper route. This keeps the CyRide
-    // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
+    // Fetch through the local MagicMirror helper route so node_helper.js owns
+    // the external CyRide API request.
     this.loadCyRideData = async () => {
       if (this.isLoadingCyRideData) return;
       this.isLoadingCyRideData = true;
@@ -25,6 +24,10 @@ Module.register("MMM-CyRide", {
         });
 
         const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
+        if (!response.ok) {
+          throw new Error(`local route returned ${response.status}`);
+        }
+
         const payload = await response.json();
         this.handleCyRidePayload(payload);
       } catch (e) {
@@ -38,6 +41,10 @@ Module.register("MMM-CyRide", {
       }
     };
 
+    setTimeout(() => {
+      this.loadCyRideData();
+    }, 1000);
+
     setInterval(() => {
       this.loadCyRideData();
     }, 1 * 60 * 1000);
@@ -50,20 +57,13 @@ Module.register("MMM-CyRide", {
     var wrapper = document.createElement("div");
     wrapper.style = "text-align:left;max-width:350px;";
 
-    // Aggressive diagnostic: getDom is definitely running if the module shows
-    // text, so start the local-route fetch from here exactly once.
-    if (!this.hasRequestedCyRideData) {
-      this.hasRequestedCyRideData = true;
-      this.loadCyRideData();
-    }
-
     if (this.error) {
       wrapper.innerHTML = this.error;
       return wrapper;
     }
 
     if (!Array.isArray(this.cyRideRoutes)) {
-      wrapper.innerHTML = "Waiting for CyRide data... frontend debug build";
+      wrapper.innerHTML = "Waiting for CyRide data...";
       return wrapper;
     }
 

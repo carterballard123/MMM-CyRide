@@ -13,6 +13,13 @@ const getData = async (self) => {
       response.status,
       response.headers.get("content-type")
     );
+    if (!response.ok) {
+      return {
+        error: true,
+        message: `CyRide request failed with status ${response.status}`
+      };
+    }
+
     const contentType = response.headers.get("content-type") || "";
     if (!contentType.includes("application/json")) {
       return {
@@ -55,6 +62,14 @@ module.exports = NodeHelper.create({
         STOP_ID: stopID,
         CUSTOMER_ID: customerID
       });
+
+      if (!upcomingStopsData) {
+        res.status(502).json({
+          error: true,
+          message: "Unable to load CyRide arrivals"
+        });
+        return;
+      }
 
       res.json(upcomingStopsData);
     });
