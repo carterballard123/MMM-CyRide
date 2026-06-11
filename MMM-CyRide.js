@@ -73,11 +73,6 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
-    // Temporary checkpoint: shows that the browser-side handler started while
-    // still allowing the parser below to continue running.
-    this.error = "Reached CyRide handler before parser";
-    this.updateDom();
-
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
@@ -97,24 +92,14 @@ Module.register("MMM-CyRide", {
       return;
     }
 
-    // Temporary checkpoint: confirms payload passed the early error/null checks.
-    this.error = "Reached parser try block";
-    this.updateDom();
-
     try {
       const arrivalsByRoute = {};
 
-      // Temporary checkpoint: confirms execution entered the parser body.
-      this.error = "Inside parser try block";
-      this.updateDom();
-
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
-      let validArrivals = 0;
       payload.forEach((arrival) => {
         const routeName = arrival.route && arrival.route.name;
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
-        validArrivals += 1;
 
         const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
 
@@ -135,17 +120,7 @@ Module.register("MMM-CyRide", {
         });
       });
 
-      // Temporary checkpoint: confirms the grouping loop processed arrivals.
-      this.error = `Grouped ${validArrivals} valid arrivals into ${
-        Object.keys(arrivalsByRoute).length
-      } routes`;
-      this.updateDom();
-
       const groupedRoutes = Object.values(arrivalsByRoute);
-
-      // Temporary checkpoint: confirms the grouped route object became an array.
-      this.error = `Object.values produced ${groupedRoutes.length} routes`;
-      this.updateDom();
 
       // Keep the next two arrivals per route, matching the module's original behavior.
       this.data = groupedRoutes.map((route) => ({
@@ -159,12 +134,6 @@ Module.register("MMM-CyRide", {
       this.error = `Data array ready: ${Array.isArray(this.data)} with ${
         this.data.length
       } routes`;
-      this.updateDom();
-      return;
-
-      // Temporary parser checkpoint: confirms the API payload was converted
-      // into route groups before we debug the final rendering step.
-      this.error = `Parsed ${this.data.length} CyRide routes`;
       this.updateDom();
       return;
     } catch (e) {
