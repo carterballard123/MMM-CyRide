@@ -40,12 +40,12 @@ module.exports = NodeHelper.create({
     setInterval(async () => {
       if (this.STOP_ID && this.CUSTOMER_ID) {
         const upcomingStopsData = await getData(this);
-console.log(
-  "MMM-CyRide interval sending payload:",
-  Array.isArray(upcomingStopsData),
-  upcomingStopsData && upcomingStopsData.length
-);
-this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
+        console.log(
+          "MMM-CyRide interval sending payload:",
+          Array.isArray(upcomingStopsData),
+          upcomingStopsData && upcomingStopsData.length
+        );
+        this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
       }
     }, 1 * 60 * 1000); // gets data from cyride every one minute
   },
@@ -56,15 +56,36 @@ this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
       payload
     );
 
-    if (notification !== "MMM-CYRIDE-SET_CYRIDE_CONFIG") return;
-    this.STOP_ID = payload.stopID;
-    this.CUSTOMER_ID = payload.customerID;
-    const upcomingStopsData = await getData(this); // get data on initial load
-    console.log(
-      "MMM-CyRide sending payload:",
-      Array.isArray(upcomingStopsData),
-      upcomingStopsData && upcomingStopsData.length
-    );
-    this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
+    if (notification === "MMM-CYRIDE-SET_CYRIDE_CONFIG") {
+      this.STOP_ID = payload.stopID;
+      this.CUSTOMER_ID = payload.customerID;
+      const upcomingStopsData = await getData(this); // get data on initial load
+      console.log(
+        "MMM-CyRide sending payload:",
+        Array.isArray(upcomingStopsData),
+        upcomingStopsData && upcomingStopsData.length
+      );
+      this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
+      return;
+    }
+
+    if (notification === "MMM-CYRIDE-REQUEST_DATA") {
+      // The frontend may ask again while it is still waiting. Refresh the
+      // config from the payload so the request works even if it arrives early.
+      if (payload) {
+        this.STOP_ID = payload.stopID;
+        this.CUSTOMER_ID = payload.customerID;
+      }
+
+      if (!this.STOP_ID || !this.CUSTOMER_ID) return;
+
+      const upcomingStopsData = await getData(this);
+      console.log(
+        "MMM-CyRide request sending payload:",
+        Array.isArray(upcomingStopsData),
+        upcomingStopsData && upcomingStopsData.length
+      );
+      this.sendSocketNotification("MMM-CYRIDE-STOPS_DATA", upcomingStopsData);
+    }
   }
 });

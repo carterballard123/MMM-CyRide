@@ -3,9 +3,24 @@ Module.register("MMM-CyRide", {
   start: function () {
     this.page = 0;
     this.error = null;
+
+    // Ask the helper for data explicitly. This makes the frontend/helper flow
+    // easier to debug than relying only on helper-side push timing.
+    this.requestCyRideData = () => {
+      this.sendSocketNotification("MMM-CYRIDE-REQUEST_DATA", this.config);
+    };
+
     setTimeout(() => {
       this.sendSocketNotification("MMM-CYRIDE-SET_CYRIDE_CONFIG", this.config);
+      this.requestCyRideData();
     }, 1000);
+
+    // While the screen is still waiting, keep asking the helper for data.
+    // Once data arrives, the normal helper interval can keep it fresh.
+    setInterval(() => {
+      if (!Array.isArray(this.data)) this.requestCyRideData();
+    }, 10000);
+
     setInterval(() => {
       this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
