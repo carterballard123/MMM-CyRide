@@ -73,6 +73,11 @@ Module.register("MMM-CyRide", {
   socketNotificationReceived: function (notification, payload) {
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
+    // Temporary checkpoint: shows that the browser-side handler started while
+    // still allowing the parser below to continue running.
+    this.error = "Reached CyRide handler before parser";
+    this.updateDom();
+
     console.log(
       "MMM-CyRide received payload:",
       Array.isArray(payload),
