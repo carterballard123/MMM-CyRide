@@ -91,6 +91,14 @@ Module.register("MMM-CyRide", {
 
     try {
       stage = `received ${notification}`;
+
+      if (notification === "MMM-CYRIDE-DEBUG_PONG") {
+        this.data = null;
+        this.error = payload;
+        this.updateDom();
+        return;
+      }
+
       if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
 
       // Temporary socket heartbeat: proves whether the frontend receives the

@@ -70,6 +70,11 @@ module.exports = NodeHelper.create({
     }
 
     if (notification === "MMM-CYRIDE-REQUEST_DATA") {
+      this.sendSocketNotification(
+        "MMM-CYRIDE-DEBUG_PONG",
+        "Helper-to-frontend socket works"
+      );
+
       // The frontend may ask again while it is still waiting. Refresh the
       // config from the payload so the request works even if it arrives early.
       if (payload) {
