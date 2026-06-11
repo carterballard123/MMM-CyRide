@@ -3,6 +3,7 @@ Module.register("MMM-CyRide", {
   start: function () {
     this.page = 0;
     this.error = "Frontend HTTP build started";
+    this.debugTicks = 0;
 
     // Fetch through the local MagicMirror helper route. This keeps the CyRide
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
@@ -42,6 +43,9 @@ Module.register("MMM-CyRide", {
     }, 1 * 60 * 1000);
 
     setInterval(() => {
+      this.debugTicks += 1;
+      this.data = null;
+      this.error = `Frontend timer tick ${this.debugTicks}`;
       this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
   },
