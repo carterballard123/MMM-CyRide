@@ -71,28 +71,35 @@ Module.register("MMM-CyRide", {
     return wrapper;
   },
   socketNotificationReceived: function (notification, payload) {
-    if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
-
-    console.log(
-      "MMM-CyRide received payload:",
-      Array.isArray(payload),
-      payload && payload.length
-    );
-
-    if (payload && payload.error) {
-      this.data = null;
-      this.error = payload.message;
-      this.updateDom();
-      return;
-    }
-    if (!payload) {
-      this.data = null;
-      this.error = "Unable to load CyRide arrivals";
-      this.updateDom();
-      return;
-    }
+    // Track how far the frontend gets so runtime errors show a useful message.
+    let stage = "handler entered";
 
     try {
+      stage = `received ${notification}`;
+      if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
+
+      stage = "checking payload";
+      console.log(
+        "MMM-CyRide received payload:",
+        Array.isArray(payload),
+        payload && payload.length
+      );
+
+      if (payload && payload.error) {
+        this.data = null;
+        this.error = payload.message;
+        this.updateDom();
+        return;
+      }
+
+      if (!Array.isArray(payload)) {
+        this.data = null;
+        this.error = "CyRide payload was not an array";
+        this.updateDom();
+        return;
+      }
+
+      stage = "grouping arrivals";
       const arrivalsByRoute = {};
 
       // The current CyRide API returns a flat list of arrivals, so group them by
@@ -120,8 +127,10 @@ Module.register("MMM-CyRide", {
         });
       });
 
+      stage = "building route list";
       const groupedRoutes = Object.values(arrivalsByRoute);
 
+      stage = "saving parsed data";
       // Keep the next two arrivals per route, matching the module's original behavior.
       this.data = groupedRoutes.map((route) => ({
         routeName: route.routeName,
@@ -138,7 +147,7 @@ Module.register("MMM-CyRide", {
       return;
     } catch (e) {
       this.data = null;
-      this.error = `CyRide parser error: ${e.message}`;
+      this.error = `CyRide frontend error at ${stage}: ${e.message}`;
       this.updateDom();
     }
   }
