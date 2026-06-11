@@ -37,9 +37,7 @@ Module.register("MMM-CyRide", {
       }
     };
 
-    setTimeout(() => {
-      this.loadCyRideData();
-    }, 1000);
+    this.loadCyRideData();
 
     setInterval(() => {
       this.loadCyRideData();
