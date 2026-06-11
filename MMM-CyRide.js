@@ -71,9 +71,10 @@ Module.register("MMM-CyRide", {
     return wrapper;
   },
   socketNotificationReceived: function (notification, payload) {
-    this.error = `Socket received: ${notification}`;
-    this.updateDom();
     if (notification !== "MMM-CYRIDE-STOPS_DATA") return;
+
+    this.error = `CyRide payload received: ${Array.isArray(payload) ? payload.length : "non-array"}`;
+    this.updateDom();
 
     // Temporary render test: proves the frontend can display route data once a
     // CyRide socket notification arrives. Remove this block after testing.
