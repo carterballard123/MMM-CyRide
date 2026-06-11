@@ -20,7 +20,7 @@ Module.register("MMM-CyRide", {
     }
 
     if (!Array.isArray(this.data)) {
-      wrapper.innerHTML = "Waiting for CyRide data...";
+      wrapper.innerHTML = "Waiting for CyRide data... frontend debug build";
       return wrapper;
     }
 
