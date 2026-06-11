@@ -3,7 +3,7 @@ Module.register("MMM-CyRide", {
   start: function () {
     this.page = 0;
     this.error = "Frontend HTTP build started";
-    this.debugTicks = 0;
+    this.hasRequestedCyRideData = false;
 
     // Fetch through the local MagicMirror helper route. This keeps the CyRide
     // API call in node_helper.js but avoids the broken helper-to-frontend socket path.
@@ -39,24 +39,20 @@ Module.register("MMM-CyRide", {
     };
 
     setInterval(() => {
-      this.loadCyRideData();
-    }, 1 * 60 * 1000);
-
-    setInterval(() => {
-      this.debugTicks += 1;
-      this.data = null;
-      this.error = `Frontend timer tick ${this.debugTicks}`;
-      this.updateDom(1000);
+      if (Array.isArray(this.data)) this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
-  },
-  notificationReceived: function (notification) {
-    if (notification === "DOM_OBJECTS_CREATED") {
-      this.loadCyRideData();
-    }
   },
   getDom: function () {
     var wrapper = document.createElement("div");
     wrapper.style = "text-align:left;max-width:350px;";
+
+    // Aggressive diagnostic: getDom is definitely running if the module shows
+    // text, so start the local-route fetch from here exactly once.
+    if (!this.hasRequestedCyRideData) {
+      this.hasRequestedCyRideData = true;
+      this.error = "getDom started local CyRide fetch";
+      this.loadCyRideData();
+    }
 
     if (this.error) {
       wrapper.innerHTML = this.error;
