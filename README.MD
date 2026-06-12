@@ -56,6 +56,30 @@ For a single stop, the older `stopID` config style is still supported:
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
 | `rotationInterval` | `5000` | Milliseconds each page of routes stays visible before rotating. |
 | `maxArrivalsPerRoute` | `2` | Number of arrival times to show under each route. |
+| `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
+
+### Route Filtering
+
+Use `hideRoutes` to remove routes from the display. Filters are case-insensitive and can match part of the displayed route name.
+
+```js
+config: {
+  stops: [
+    { stopID: "2501", label: "Home" }
+  ],
+  hideRoutes: ["green"]
+}
+```
+
+This hides routes such as `2 Green West`.
+
+Use more specific filters when needed:
+
+```js
+hideRoutes: ["2 Green West"]
+```
+
+Avoid overly broad filters like `"2"` unless you intentionally want to match any route name containing `2`, such as `12 Lilac` or `21 Cardinal`.
 
 ### Find your Stop ID
 To find your stop's ID, use this website [on this website](https://mycyride.com/arrivals). Choose a route that passes the relevant stop, then choose your stop from the list of stops. The stop ID is listed in bold after choosing a route and stop. In the image below, the stop ID is 2520.

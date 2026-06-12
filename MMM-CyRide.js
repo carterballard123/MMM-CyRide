@@ -7,7 +7,8 @@ Module.register("MMM-CyRide", {
     rotationInterval: 5000,
     maxArrivalsPerRoute: 2,
     refreshInterval: 1 * 60 * 1000,
-    hideRoutes: []
+    hideRoutes: [],
+    showOnlyRoutes: []
   },
   start: function () {
     this.page = 0;
@@ -177,6 +178,9 @@ Module.register("MMM-CyRide", {
       const hiddenRoutes = (this.config.hideRoutes || []).map((route) =>
         String(route).toLowerCase().trim()
       );
+      const shownRoutes = (this.config.showOnlyRoutes || []).map((route) =>
+        String(route).toLowerCase().trim()
+      );
 
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
@@ -185,6 +189,11 @@ Module.register("MMM-CyRide", {
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
 
         const normalizedRouteName = String(routeName).toLowerCase().trim();
+        if ( shownRoutes.length > 0 &&
+          !shownRoutes.some((route) => normalizedRouteName.includes(route))
+        ) {
+          return;
+        }
 
         if (hiddenRoutes.some((route) => normalizedRouteName.includes(route))) {
           return;
