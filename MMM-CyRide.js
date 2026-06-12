@@ -8,7 +8,8 @@ Module.register("MMM-CyRide", {
     maxArrivalsPerRoute: 2,
     refreshInterval: 1 * 60 * 1000,
     hideRoutes: [],
-    showOnlyRoutes: []
+    showOnlyRoutes: [],
+    maxRoutesPerPage: 2
   },
   start: function () {
     this.page = 0;
@@ -113,52 +114,79 @@ Module.register("MMM-CyRide", {
     title.style = "margin:0px;";
     wrapper.appendChild(title);
 
+    const allRouteGroups = [];
+
     this.cyRideStops.forEach((stopGroup) => {
+      stopGroup.routes.forEach((route) => {
+        allRouteGroups.push({
+          stopLabel: stopGroup.label,
+          route: route
+        });
+      });
+    });
+
+    const maxRoutesPerPage = Number(this.config.maxRoutesPerPage) || 2;
+    const totalPages = Math.max(
+      1,
+      Math.ceil(allRouteGroups.length / maxRoutesPerPage)
+    );
+
+    if (this.page >= totalPages) this.page = 0;
+
+    const pageStart = this.page * maxRoutesPerPage;
+    const pageRoutes = allRouteGroups.slice(
+      pageStart,
+      pageStart + maxRoutesPerPage
+    );
+
+    pageRoutes.forEach((routeGroup) => {
       const stopHeader = document.createElement("h5");
-      stopHeader.innerHTML = stopGroup.label;
+      stopHeader.innerHTML = routeGroup.stopLabel;
       stopHeader.style = "margin:8px 0px 2px 0px;";
       wrapper.appendChild(stopHeader);
 
-      stopGroup.routes.forEach((route, i) => {
-        if (i % 2 !== this.page) return;
-        let upcomingStops = [];
-        route.stops.forEach((s) => {
-          if (s.Minutes >= 0 && s.Minutes < 60) upcomingStops.push(s); // don't show stops with negative time or longer than an hour away
-        });
-        if (upcomingStops.length === 0) return;
-        const container = document.createElement("div");
-        const header = document.createElement("h5");
-        header.style = "margin:0px;";
-        const detailsContainer = document.createElement("div");
-        const divider = document.createElement("hr");
-        divider.style = "margin-top:0px;margin-bottom:5px;";
-
-        upcomingStops.forEach((stop) => {
-          if (stop.Time <= 0 || stop.Time > 60) return;
-          const timeDetails = document.createElement("p");
-          timeDetails.style = "font-size:20px;margin:0px;line-height:normal;";
-          timeDetails.innerHTML = `${stop.Time} min${
-            stop.Time === 1 ? "" : "s"
-          } | ${stop.ArriveTime}${stop.IsLastStop ? " - LAST STOP" : ""}`;
-          detailsContainer.appendChild(timeDetails);
-        });
-
-        let color = route.color || getColor(route.routeName);
-        const box = document.createElement("div");
-        box.style = `height:20px;width:20px;background-color:${color};display:inline-block;`;
-
-        header.innerHTML = route.routeName;
-        header.style =
-          "display:inline-block;margin-left:12px;margin-top:0px;margin-bottom:0px;text-overflow:ellipsis;white-space:nowrap;width:270px;overflow:hidden;vertical-align:bottom";
-        container.appendChild(box);
-        container.appendChild(header);
-        container.appendChild(divider);
-        container.appendChild(detailsContainer);
-        wrapper.appendChild(container);
+      const route = routeGroup.route;
+      let upcomingStops = [];
+      route.stops.forEach((s) => {
+        if (s.Minutes >= 0 && s.Minutes < 60) upcomingStops.push(s); // don't show stops with negative time or longer than an hour away
       });
+      if (upcomingStops.length === 0) return;
+      const container = document.createElement("div");
+      const header = document.createElement("h5");
+      header.style = "margin:0px;";
+      const detailsContainer = document.createElement("div");
+      const divider = document.createElement("hr");
+      divider.style = "margin-top:0px;margin-bottom:5px;";
+
+      upcomingStops.forEach((stop) => {
+        if (stop.Time <= 0 || stop.Time > 60) return;
+        const timeDetails = document.createElement("p");
+        timeDetails.style = "font-size:20px;margin:0px;line-height:normal;";
+        timeDetails.innerHTML = `${stop.Time} min${
+          stop.Time === 1 ? "" : "s"
+        } | ${stop.ArriveTime}${stop.IsLastStop ? " - LAST STOP" : ""}`;
+        detailsContainer.appendChild(timeDetails);
+      });
+
+      let color = route.color || getColor(route.routeName);
+      const box = document.createElement("div");
+      box.style = `height:20px;width:20px;background-color:${color};display:inline-block;`;
+
+      header.innerHTML = route.routeName;
+      header.style =
+        "display:inline-block;margin-left:12px;margin-top:0px;margin-bottom:0px;text-overflow:ellipsis;white-space:nowrap;width:270px;overflow:hidden;vertical-align:bottom";
+      container.appendChild(box);
+      container.appendChild(header);
+      container.appendChild(divider);
+      container.appendChild(detailsContainer);
+      wrapper.appendChild(container);
     });
-    if (this.page === 1) this.page = 0;
-    else if (this.page === 0) this.page = 1;
+
+    if (totalPages > 1) {
+      this.page = (this.page + 1) % totalPages;
+    } else {
+      this.page = 0;
+    }
     return wrapper;
   },
   parseCyRidePayload: function (payload) {
@@ -189,7 +217,8 @@ Module.register("MMM-CyRide", {
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
 
         const normalizedRouteName = String(routeName).toLowerCase().trim();
-        if ( shownRoutes.length > 0 &&
+        if (
+          shownRoutes.length > 0 &&
           !shownRoutes.some((route) => normalizedRouteName.includes(route))
         ) {
           return;

@@ -56,6 +56,7 @@ For a single stop, the older `stopID` config style is still supported:
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
 | `rotationInterval` | `5000` | Milliseconds each page of routes stays visible before rotating. |
 | `maxArrivalsPerRoute` | `2` | Number of arrival times to show under each route. |
+| `maxRoutesPerPage` | `2` | Number of route blocks to show before rotating to the next page. |
 | `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
 
 ### Route Filtering
