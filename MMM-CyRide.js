@@ -1,5 +1,12 @@
 Module.register("MMM-CyRide", {
-  defaults: { stopID: "5108903", customerID: "187" },
+  defaults: {
+    // stopID/stopLabel keep the original single-stop config style working.
+    // New configs should prefer the stops array below.
+    stopID: "5108903",
+    customerID: "187",
+    rotationInterval: 5000,
+    maxArrivalsPerRoute: 2
+  },
   start: function () {
     this.page = 0;
     this.cyRideStops = null;
@@ -64,9 +71,10 @@ Module.register("MMM-CyRide", {
 
     setInterval(() => {
       if (Array.isArray(this.cyRideStops)) this.updateDom(1000);
-    }, 5000); // cycle displayed data every 5 seconds
+    }, this.config.rotationInterval); // cycle displayed data at the configured pace
   },
   getConfiguredStops: function () {
+    // Modernized config: allow several labeled stops instead of only one stopID.
     if (Array.isArray(this.config.stops) && this.config.stops.length > 0) {
       return this.config.stops
         .filter((stop) => stop && stop.stopID)
@@ -194,11 +202,16 @@ Module.register("MMM-CyRide", {
       const groupedRoutes = Object.values(arrivalsByRoute);
 
       stage = "saving parsed data";
-      // Keep the next two arrivals per route, matching the module's original behavior.
+      const maxArrivalsPerRoute = Number(this.config.maxArrivalsPerRoute) || 2;
+
+      // Original behavior showed two arrivals per route. This is now
+      // configurable so users can shrink or expand the display.
       return groupedRoutes.map((route) => ({
         routeName: route.routeName,
         color: route.color,
-        stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
+        stops: Array.isArray(route.stops)
+          ? route.stops.slice(0, maxArrivalsPerRoute)
+          : []
       }));
     } catch (e) {
       throw new Error(`CyRide frontend error at ${stage}: ${e.message}`);

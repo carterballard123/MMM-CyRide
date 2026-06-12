@@ -54,6 +54,8 @@ For a single stop, the older `stopID` config style is still supported:
 | `stopID` | `"5108903"` | Legacy single-stop CyRide RTPI stop number. Used when `stops` is not configured. |
 | `stopLabel` | `"Stop {stopID}"` | Optional label for the legacy single-stop config. |
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
+| `rotationInterval` | `5000` | Milliseconds each page of routes stays visible before rotating. |
+| `maxArrivalsPerRoute` | `2` | Number of arrival times to show under each route. |
 
 ### Find your Stop ID
 To find your stop's ID, use this website [on this website](https://mycyride.com/arrivals). Choose a route that passes the relevant stop, then choose your stop from the list of stops. The stop ID is listed in bold after choosing a route and stop. In the image below, the stop ID is 2520.
@@ -92,6 +94,6 @@ The helper exposes a local MagicMirror route:
 /MMM-CyRide/arrivals?stopID={stopID}&customerID={customerID}
 ```
 
-The frontend calls that local route once for each configured stop, groups each returned flat arrival list by route, converts `secondsToArrival` into minutes, and renders the next two arrivals per route under each stop label.
+The frontend calls that local route once for each configured stop, groups each returned flat arrival list by route, converts `secondsToArrival` into minutes, and renders the configured number of arrivals per route under each stop label.
 
-Important implementation detail: the module stores arrival state in `this.cyRideRoutes`, not `this.data`. MagicMirror uses `this.data` internally for module metadata such as position, so overwriting it can break rendering.
+Important implementation detail: the module stores arrival state in `this.cyRideStops`, not `this.data`. MagicMirror uses `this.data` internally for module metadata such as position, so overwriting it can break rendering.
