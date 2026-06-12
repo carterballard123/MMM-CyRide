@@ -61,6 +61,106 @@ For a single stop, the older `stopID` config style is still supported:
 | `maxRoutesPerStopPerPage` | `1` | In `"perStop"` mode, number of route blocks to show for each stop before rotating. |
 | `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
 
+### Example Configs
+
+#### Single Stop
+
+Use this when you only care about one stop.
+
+```js
+{
+  module: "MMM-CyRide",
+  position: "top_left",
+  config: {
+    stopID: "2501",
+    stopLabel: "Home",
+    customerID: "187"
+  }
+}
+```
+
+#### Compact Multi-Stop Display
+
+Use this when you want several stops on screen but only the next arrival for each route.
+
+```js
+{
+  module: "MMM-CyRide",
+  position: "top_right",
+  config: {
+    stops: [
+      { stopID: "2501", label: "Kildee Hall" },
+      { stopID: "2520", label: "Bessey Hall" }
+    ],
+    customerID: "187",
+    maxArrivalsPerRoute: 1,
+    maxRoutesPerPage: 4,
+    rotationInterval: 10000
+  }
+}
+```
+
+#### Focus On Specific Routes
+
+Use this when a stop has many routes but you only want to see matching routes. Route filters are case-insensitive and can match part of the displayed route name.
+
+```js
+{
+  module: "MMM-CyRide",
+  position: "top_right",
+  config: {
+    stops: [
+      { stopID: "2501", label: "Kildee Hall" },
+      { stopID: "2520", label: "Bessey Hall" }
+    ],
+    customerID: "187",
+    showOnlyRoutes: ["green"],
+    maxArrivalsPerRoute: 1,
+    maxRoutesPerPage: 6
+  }
+}
+```
+
+#### Balanced Multi-Stop Paging
+
+Use this when you want each page to show routes from each configured stop instead of paging through one combined route list.
+
+```js
+{
+  module: "MMM-CyRide",
+  position: "top_right",
+  config: {
+    stops: [
+      { stopID: "2501", label: "Kildee Hall" },
+      { stopID: "2520", label: "Bessey Hall" }
+    ],
+    customerID: "187",
+    routePageMode: "perStop",
+    maxRoutesPerStopPerPage: 1,
+    maxArrivalsPerRoute: 1,
+    rotationInterval: 8000
+  }
+}
+```
+
+## Screenshots
+
+### Single Stop
+
+![Single stop MMM-CyRide display](screenshots/single-stop.png)
+
+### Compact Multi-Stop Display
+
+![Compact multi-stop MMM-CyRide display](screenshots/compact-multi-stop.png)
+
+### Route Filtered Display
+
+![Route filtered MMM-CyRide display](screenshots/route-filtered.png)
+
+### Balanced Per-Stop Paging
+
+![Balanced per-stop paging MMM-CyRide display](screenshots/per-stop-paging.png)
+
 ### Route Paging
 
 By default, `routePageMode` is `"combined"`. This treats every stop and route pair as one combined list, then uses `maxRoutesPerPage` to decide how many route blocks appear at once.
