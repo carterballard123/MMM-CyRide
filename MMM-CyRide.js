@@ -5,7 +5,9 @@ Module.register("MMM-CyRide", {
     stopID: "5108903",
     customerID: "187",
     rotationInterval: 5000,
-    maxArrivalsPerRoute: 2
+    maxArrivalsPerRoute: 2,
+    refreshInterval: 1 * 60 * 1000,
+    hideRoutes: []
   },
   start: function () {
     this.page = 0;
@@ -67,7 +69,7 @@ Module.register("MMM-CyRide", {
 
     setInterval(() => {
       this.loadCyRideData();
-    }, 1 * 60 * 1000);
+    }, this.config.refreshInterval);
 
     setInterval(() => {
       if (Array.isArray(this.cyRideStops)) this.updateDom(1000);
@@ -178,6 +180,9 @@ Module.register("MMM-CyRide", {
       payload.forEach((arrival) => {
         const routeName = arrival.route && arrival.route.name;
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
+
+        const hiddenRoute = this.config.hiddenRoutes || [];
+        if (hiddenRoute.includes(routeName)) return;
 
         const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
 
