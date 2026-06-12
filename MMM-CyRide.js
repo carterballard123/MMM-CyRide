@@ -1,8 +1,21 @@
 Module.register("MMM-CyRide", {
-  defaults: { stopID: "5108903", customerID: "187" },
+  defaults: {
+    // stopID/stopLabel keep the original single-stop config style working.
+    // New configs should prefer the stops array below.
+    stopID: "5108903",
+    customerID: "187",
+    rotationInterval: 5000,
+    maxArrivalsPerRoute: 2,
+    refreshInterval: 1 * 60 * 1000,
+    hideRoutes: [],
+    showOnlyRoutes: [],
+    routePageMode: "combined",
+    maxRoutesPerStopPerPage: 1,
+    maxRoutesPerPage: 2
+  },
   start: function () {
     this.page = 0;
-    this.cyRideRoutes = null;
+    this.cyRideStops = null;
     this.error = null;
     this.isLoadingCyRideData = false;
 
@@ -13,26 +26,39 @@ Module.register("MMM-CyRide", {
       this.isLoadingCyRideData = true;
 
       try {
-        if (!Array.isArray(this.cyRideRoutes)) {
+        if (!Array.isArray(this.cyRideStops)) {
           this.error = "Loading CyRide arrivals...";
           this.updateDom();
         }
 
-        const params = new URLSearchParams({
-          stopID: this.config.stopID,
-          customerID: this.config.customerID
-        });
+        const stops = this.getConfiguredStops();
+        const stopResults = await Promise.all(
+          stops.map(async (stop) => {
+            const params = new URLSearchParams({
+              stopID: stop.stopID,
+              customerID: this.config.customerID
+            });
 
-        const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
-        if (!response.ok) {
-          throw new Error(`local route returned ${response.status}`);
-        }
+            const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
+            if (!response.ok) {
+              throw new Error(`local route returned ${response.status}`);
+            }
 
-        const payload = await response.json();
-        this.handleCyRidePayload(payload);
+            const payload = await response.json();
+            return {
+              label: stop.label,
+              stopID: stop.stopID,
+              routes: this.parseCyRidePayload(payload)
+            };
+          })
+        );
+
+        this.cyRideStops = stopResults;
+        this.error = null;
+        this.updateDom();
       } catch (e) {
-        if (!Array.isArray(this.cyRideRoutes)) this.cyRideRoutes = null;
-        this.error = Array.isArray(this.cyRideRoutes)
+        if (!Array.isArray(this.cyRideStops)) this.cyRideStops = null;
+        this.error = Array.isArray(this.cyRideStops)
           ? null
           : `Unable to load CyRide arrivals: ${e.message}`;
         this.updateDom();
@@ -47,11 +73,29 @@ Module.register("MMM-CyRide", {
 
     setInterval(() => {
       this.loadCyRideData();
-    }, 1 * 60 * 1000);
+    }, this.config.refreshInterval);
 
     setInterval(() => {
-      if (Array.isArray(this.cyRideRoutes)) this.updateDom(1000);
-    }, 5000); // cycle displayed data every 5 seconds
+      if (Array.isArray(this.cyRideStops)) this.updateDom(1000);
+    }, this.config.rotationInterval); // cycle displayed data at the configured pace
+  },
+  getConfiguredStops: function () {
+    // Modernized config: allow several labeled stops instead of only one stopID.
+    if (Array.isArray(this.config.stops) && this.config.stops.length > 0) {
+      return this.config.stops
+        .filter((stop) => stop && stop.stopID)
+        .map((stop) => ({
+          stopID: String(stop.stopID),
+          label: stop.label || `Stop ${stop.stopID}`
+        }));
+    }
+
+    return [
+      {
+        stopID: String(this.config.stopID),
+        label: this.config.stopLabel || `Stop ${this.config.stopID}`
+      }
+    ];
   },
   getDom: function () {
     var wrapper = document.createElement("div");
@@ -62,7 +106,7 @@ Module.register("MMM-CyRide", {
       return wrapper;
     }
 
-    if (!Array.isArray(this.cyRideRoutes)) {
+    if (!Array.isArray(this.cyRideStops)) {
       wrapper.innerHTML = "Waiting for CyRide data...";
       return wrapper;
     }
@@ -72,8 +116,16 @@ Module.register("MMM-CyRide", {
     title.style = "margin:0px;";
     wrapper.appendChild(title);
 
-    this.cyRideRoutes.map((route, i) => {
-      if (i % 2 !== this.page) return;
+    const pageRoutes = this.getCurrentPageRoutes();
+    const totalPages = pageRoutes.totalPages;
+
+    pageRoutes.routes.forEach((routeGroup) => {
+      const stopHeader = document.createElement("h5");
+      stopHeader.innerHTML = routeGroup.stopLabel;
+      stopHeader.style = "margin:8px 0px 2px 0px;";
+      wrapper.appendChild(stopHeader);
+
+      const route = routeGroup.route;
       let upcomingStops = [];
       route.stops.forEach((s) => {
         if (s.Minutes >= 0 && s.Minutes < 60) upcomingStops.push(s); // don't show stops with negative time or longer than an hour away
@@ -109,36 +161,117 @@ Module.register("MMM-CyRide", {
       container.appendChild(detailsContainer);
       wrapper.appendChild(container);
     });
-    if (this.page === 1) this.page = 0;
-    else if (this.page === 0) this.page = 1;
+
+    if (totalPages > 1) {
+      this.page = (this.page + 1) % totalPages;
+    } else {
+      this.page = 0;
+    }
     return wrapper;
   },
-  handleCyRidePayload: function (payload) {
+  getCurrentPageRoutes: function () {
+    if (this.config.routePageMode === "perStop") {
+      return this.getPerStopPageRoutes();
+    }
+
+    return this.getCombinedPageRoutes();
+  },
+  getCombinedPageRoutes: function () {
+    const allRouteGroups = [];
+
+    this.cyRideStops.forEach((stopGroup) => {
+      stopGroup.routes.forEach((route) => {
+        allRouteGroups.push({
+          stopLabel: stopGroup.label,
+          route: route
+        });
+      });
+    });
+
+    const maxRoutesPerPage = Number(this.config.maxRoutesPerPage) || 2;
+    const totalPages = Math.max(
+      1,
+      Math.ceil(allRouteGroups.length / maxRoutesPerPage)
+    );
+
+    if (this.page >= totalPages) this.page = 0;
+
+    const pageStart = this.page * maxRoutesPerPage;
+
+    return {
+      totalPages: totalPages,
+      routes: allRouteGroups.slice(pageStart, pageStart + maxRoutesPerPage)
+    };
+  },
+  getPerStopPageRoutes: function () {
+    const maxRoutesPerStopPerPage =
+      Number(this.config.maxRoutesPerStopPerPage) || 1;
+    const totalPages = Math.max(
+      1,
+      ...this.cyRideStops.map((stopGroup) =>
+        Math.ceil(stopGroup.routes.length / maxRoutesPerStopPerPage)
+      )
+    );
+
+    if (this.page >= totalPages) this.page = 0;
+
+    const pageRoutes = [];
+
+    this.cyRideStops.forEach((stopGroup) => {
+      const pageStart = this.page * maxRoutesPerStopPerPage;
+      stopGroup.routes
+        .slice(pageStart, pageStart + maxRoutesPerStopPerPage)
+        .forEach((route) => {
+          pageRoutes.push({
+            stopLabel: stopGroup.label,
+            route: route
+          });
+        });
+    });
+
+    return {
+      totalPages: totalPages,
+      routes: pageRoutes
+    };
+  },
+  parseCyRidePayload: function (payload) {
     let stage = "checking payload";
 
     try {
       if (payload && payload.error) {
-        this.cyRideRoutes = null;
-        this.error = payload.message;
-        this.updateDom();
-        return;
+        throw new Error(payload.message);
       }
 
       if (!Array.isArray(payload)) {
-        this.cyRideRoutes = null;
-        this.error = "CyRide payload was not an array";
-        this.updateDom();
-        return;
+        throw new Error("CyRide payload was not an array");
       }
 
       stage = "grouping arrivals";
       const arrivalsByRoute = {};
+      const hiddenRoutes = (this.config.hideRoutes || []).map((route) =>
+        String(route).toLowerCase().trim()
+      );
+      const shownRoutes = (this.config.showOnlyRoutes || []).map((route) =>
+        String(route).toLowerCase().trim()
+      );
 
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
       payload.forEach((arrival) => {
         const routeName = arrival.route && arrival.route.name;
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
+
+        const normalizedRouteName = String(routeName).toLowerCase().trim();
+        if (
+          shownRoutes.length > 0 &&
+          !shownRoutes.some((route) => normalizedRouteName.includes(route))
+        ) {
+          return;
+        }
+
+        if (hiddenRoutes.some((route) => normalizedRouteName.includes(route))) {
+          return;
+        }
 
         const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
 
@@ -163,20 +296,19 @@ Module.register("MMM-CyRide", {
       const groupedRoutes = Object.values(arrivalsByRoute);
 
       stage = "saving parsed data";
-      // Keep the next two arrivals per route, matching the module's original behavior.
-      this.cyRideRoutes = groupedRoutes.map((route) => ({
+      const maxArrivalsPerRoute = Number(this.config.maxArrivalsPerRoute) || 2;
+
+      // Original behavior showed two arrivals per route. This is now
+      // configurable so users can shrink or expand the display.
+      return groupedRoutes.map((route) => ({
         routeName: route.routeName,
         color: route.color,
-        stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
+        stops: Array.isArray(route.stops)
+          ? route.stops.slice(0, maxArrivalsPerRoute)
+          : []
       }));
-
-      this.error = null;
-      this.updateDom();
-      return;
     } catch (e) {
-      this.cyRideRoutes = null;
-      this.error = `CyRide frontend error at ${stage}: ${e.message}`;
-      this.updateDom();
+      throw new Error(`CyRide frontend error at ${stage}: ${e.message}`);
     }
   }
 });
