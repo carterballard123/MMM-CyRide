@@ -174,6 +174,9 @@ Module.register("MMM-CyRide", {
 
       stage = "grouping arrivals";
       const arrivalsByRoute = {};
+      const hiddenRoutes = (this.config.hideRoutes || []).map((route) =>
+        String(route).toLowerCase().trim()
+      );
 
       // The current CyRide API returns a flat list of arrivals, so group them by
       // route before passing the data to the existing display code.
@@ -181,8 +184,11 @@ Module.register("MMM-CyRide", {
         const routeName = arrival.route && arrival.route.name;
         if (!routeName || typeof arrival.secondsToArrival !== "number") return;
 
-        const hiddenRoute = this.config.hiddenRoutes || [];
-        if (hiddenRoute.includes(routeName)) return;
+        const normalizedRouteName = String(routeName).toLowerCase().trim();
+
+        if (hiddenRoutes.some((route) => normalizedRouteName.includes(route))) {
+          return;
+        }
 
         const minutes = Math.max(1, Math.ceil(arrival.secondsToArrival / 60));
 
