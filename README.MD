@@ -57,7 +57,41 @@ For a single stop, the older `stopID` config style is still supported:
 | `rotationInterval` | `5000` | Milliseconds each page of routes stays visible before rotating. |
 | `maxArrivalsPerRoute` | `2` | Number of arrival times to show under each route. |
 | `maxRoutesPerPage` | `2` | Number of route blocks to show before rotating to the next page. |
+| `routePageMode` | `"combined"` | Controls route paging. Use `"combined"` to page all stops together or `"perStop"` to show routes from each stop on the same page. |
+| `maxRoutesPerStopPerPage` | `1` | In `"perStop"` mode, number of route blocks to show for each stop before rotating. |
 | `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
+
+### Route Paging
+
+By default, `routePageMode` is `"combined"`. This treats every stop and route pair as one combined list, then uses `maxRoutesPerPage` to decide how many route blocks appear at once.
+
+```js
+config: {
+  stops: [
+    { stopID: "2501", label: "Kildee Hall" },
+    { stopID: "2520", label: "Bessey Hall" }
+  ],
+  routePageMode: "combined",
+  maxRoutesPerPage: 2
+}
+```
+
+If one stop has several routes, `"combined"` mode may show multiple routes from that same stop before rotating to routes from another stop.
+
+Use `"perStop"` mode when you want each page to include routes from each configured stop:
+
+```js
+config: {
+  stops: [
+    { stopID: "2501", label: "Kildee Hall" },
+    { stopID: "2520", label: "Bessey Hall" }
+  ],
+  routePageMode: "perStop",
+  maxRoutesPerStopPerPage: 1
+}
+```
+
+With this setup, each page shows up to one route from Kildee Hall and one route from Bessey Hall before rotating.
 
 ### Route Filtering
 

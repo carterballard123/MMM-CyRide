@@ -9,6 +9,8 @@ Module.register("MMM-CyRide", {
     refreshInterval: 1 * 60 * 1000,
     hideRoutes: [],
     showOnlyRoutes: [],
+    routePageMode: "combined",
+    maxRoutesPerStopPerPage: 1,
     maxRoutesPerPage: 2
   },
   start: function () {
@@ -114,32 +116,10 @@ Module.register("MMM-CyRide", {
     title.style = "margin:0px;";
     wrapper.appendChild(title);
 
-    const allRouteGroups = [];
+    const pageRoutes = this.getCurrentPageRoutes();
+    const totalPages = pageRoutes.totalPages;
 
-    this.cyRideStops.forEach((stopGroup) => {
-      stopGroup.routes.forEach((route) => {
-        allRouteGroups.push({
-          stopLabel: stopGroup.label,
-          route: route
-        });
-      });
-    });
-
-    const maxRoutesPerPage = Number(this.config.maxRoutesPerPage) || 2;
-    const totalPages = Math.max(
-      1,
-      Math.ceil(allRouteGroups.length / maxRoutesPerPage)
-    );
-
-    if (this.page >= totalPages) this.page = 0;
-
-    const pageStart = this.page * maxRoutesPerPage;
-    const pageRoutes = allRouteGroups.slice(
-      pageStart,
-      pageStart + maxRoutesPerPage
-    );
-
-    pageRoutes.forEach((routeGroup) => {
+    pageRoutes.routes.forEach((routeGroup) => {
       const stopHeader = document.createElement("h5");
       stopHeader.innerHTML = routeGroup.stopLabel;
       stopHeader.style = "margin:8px 0px 2px 0px;";
@@ -188,6 +168,71 @@ Module.register("MMM-CyRide", {
       this.page = 0;
     }
     return wrapper;
+  },
+  getCurrentPageRoutes: function () {
+    if (this.config.routePageMode === "perStop") {
+      return this.getPerStopPageRoutes();
+    }
+
+    return this.getCombinedPageRoutes();
+  },
+  getCombinedPageRoutes: function () {
+    const allRouteGroups = [];
+
+    this.cyRideStops.forEach((stopGroup) => {
+      stopGroup.routes.forEach((route) => {
+        allRouteGroups.push({
+          stopLabel: stopGroup.label,
+          route: route
+        });
+      });
+    });
+
+    const maxRoutesPerPage = Number(this.config.maxRoutesPerPage) || 2;
+    const totalPages = Math.max(
+      1,
+      Math.ceil(allRouteGroups.length / maxRoutesPerPage)
+    );
+
+    if (this.page >= totalPages) this.page = 0;
+
+    const pageStart = this.page * maxRoutesPerPage;
+
+    return {
+      totalPages: totalPages,
+      routes: allRouteGroups.slice(pageStart, pageStart + maxRoutesPerPage)
+    };
+  },
+  getPerStopPageRoutes: function () {
+    const maxRoutesPerStopPerPage =
+      Number(this.config.maxRoutesPerStopPerPage) || 1;
+    const totalPages = Math.max(
+      1,
+      ...this.cyRideStops.map((stopGroup) =>
+        Math.ceil(stopGroup.routes.length / maxRoutesPerStopPerPage)
+      )
+    );
+
+    if (this.page >= totalPages) this.page = 0;
+
+    const pageRoutes = [];
+
+    this.cyRideStops.forEach((stopGroup) => {
+      const pageStart = this.page * maxRoutesPerStopPerPage;
+      stopGroup.routes
+        .slice(pageStart, pageStart + maxRoutesPerStopPerPage)
+        .forEach((route) => {
+          pageRoutes.push({
+            stopLabel: stopGroup.label,
+            route: route
+          });
+        });
+    });
+
+    return {
+      totalPages: totalPages,
+      routes: pageRoutes
+    };
   },
   parseCyRidePayload: function (payload) {
     let stage = "checking payload";
