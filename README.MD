@@ -1,29 +1,56 @@
 # MMM-CyRide
 
-A [Magic Mirror](https://github.com/MichMich/MagicMirror) module to show upcoming CyRide routes near your location. CyRide is the public bus system in Ames, IA home of Iowa State University. Go Cyclones!
+A [MagicMirror2](https://github.com/MichMich/MagicMirror) module for live CyRide bus arrivals in Ames, Iowa. CyRide is the public bus system serving Ames and Iowa State University.
 
 > **Modernized fork:** This version restores live CyRide arrival support using the current MyCyRide RTPI API. Older versions of this module used an endpoint that now returns the MyCyRide web app HTML instead of arrival JSON.
 
+## Features
+
+- Live CyRide arrival times from the current MyCyRide RTPI API
+- Labeled single-stop and multi-stop configurations
+- Configurable refresh and display rotation intervals
+- Route filtering with `showOnlyRoutes` and `hideRoutes`
+- Configurable arrivals per route
+- Two route paging modes for compact or balanced multi-stop displays
+
+## Screenshots
+
+### Single Stop
+
+![Single stop MMM-CyRide display](screenshots/single-stop.png)
+
+### Compact Multi-Stop Display
+
+![Compact multi-stop MMM-CyRide display](screenshots/compact-multi-stop.png)
+
+### Route Filtered Display
+
+![Route filtered MMM-CyRide display](screenshots/route-filtered.png)
+
+### Balanced Per-Stop Paging
+
+![Balanced per-stop paging MMM-CyRide display](screenshots/per-stop-paging.png)
+
 ## Installation
 
-To install MMM-CyRide, open the modules folder of your `MagicMirror` installation. Run the following commands:
+Open the `modules` folder of your MagicMirror installation and run:
 
-- `git clone https://github.com/carterballard123/MMM-CyRide.git`
-- `cd MMM-CyRide`
-- `npm install`
+```bash
+git clone https://github.com/carterballard123/MMM-CyRide.git
+cd MMM-CyRide
+npm install
+```
 
 This module uses `node-fetch@2` in `node_helper.js` to request CyRide arrival data.
 
-To finish adding the module, follow the configuration settings below.
-
 ## Configuration
 
-Add the following code to your Magic Mirror's `config.js` file's `modules` array.
+Add the module to the `modules` array in your MagicMirror `config/config.js` file.
 
 ```js
 {
   module: "MMM-CyRide",
-  position: "top_left", // customize to the position you want
+  position: "top_left",
   config: {
     stops: [
       { stopID: "2501", label: "Home" },
@@ -56,16 +83,18 @@ For a single stop, the older `stopID` config style is still supported:
 | `stopID` | `"5108903"` | Legacy single-stop CyRide RTPI stop number. Used when `stops` is not configured. |
 | `stopLabel` | `"Stop {stopID}"` | Optional label for the legacy single-stop config. |
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
+| `refreshInterval` | `60000` | Milliseconds between requests for fresh CyRide data. |
 | `rotationInterval` | `5000` | Milliseconds each page of routes stays visible before rotating. |
 | `maxArrivalsPerRoute` | `2` | Number of arrival times to show under each route. |
-| `maxRoutesPerPage` | `2` | Number of route blocks to show before rotating to the next page. |
+| `maxRoutesPerPage` | `2` | In `"combined"` page mode, number of total route blocks to show before rotating. |
 | `routePageMode` | `"combined"` | Controls route paging. Use `"combined"` to page all stops together or `"perStop"` to show routes from each stop on the same page. |
 | `maxRoutesPerStopPerPage` | `1` | In `"perStop"` mode, number of route blocks to show for each stop before rotating. |
+| `showOnlyRoutes` | `[]` | Show only routes using case-insensitive partial matches against the displayed route name. |
 | `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
 
-### Example Configs
+## Example Configs
 
-#### Single Stop
+### Single Stop
 
 Use this when you only care about one stop.
 
@@ -81,7 +110,7 @@ Use this when you only care about one stop.
 }
 ```
 
-#### Compact Multi-Stop Display
+### Compact Multi-Stop Display
 
 Use this when you want several stops on screen but only the next arrival for each route.
 
@@ -102,7 +131,7 @@ Use this when you want several stops on screen but only the next arrival for eac
 }
 ```
 
-#### Focus On Specific Routes
+### Focus On Specific Routes
 
 Use this when a stop has many routes but you only want to see matching routes. Route filters are case-insensitive and can match part of the displayed route name.
 
@@ -123,7 +152,7 @@ Use this when a stop has many routes but you only want to see matching routes. R
 }
 ```
 
-#### Balanced Multi-Stop Paging
+### Balanced Multi-Stop Paging
 
 Use this when you want each page to show routes from each configured stop instead of paging through one combined route list.
 
@@ -145,25 +174,7 @@ Use this when you want each page to show routes from each configured stop instea
 }
 ```
 
-## Screenshots
-
-### Single Stop
-
-![Single stop MMM-CyRide display](screenshots/single-stop.png)
-
-### Compact Multi-Stop Display
-
-![Compact multi-stop MMM-CyRide display](screenshots/compact-multi-stop.png)
-
-### Route Filtered Display
-
-![Route filtered MMM-CyRide display](screenshots/route-filtered.png)
-
-### Balanced Per-Stop Paging
-
-![Balanced per-stop paging MMM-CyRide display](screenshots/per-stop-paging.png)
-
-### Route Paging
+## Route Paging
 
 By default, `routePageMode` is `"combined"`. This treats every stop and route pair as one combined list, then uses `maxRoutesPerPage` to decide how many route blocks appear at once.
 
@@ -195,9 +206,20 @@ config: {
 
 With this setup, each page shows up to one route from Kildee Hall and one route from Bessey Hall before rotating.
 
-### Route Filtering
+## Route Filtering
 
-Use `hideRoutes` to remove routes from the display. Filters are case-insensitive and can match part of the displayed route name.
+Use `showOnlyRoutes` to display only matching routes:
+
+```js
+config: {
+  stops: [
+    { stopID: "2501", label: "Home" }
+  ],
+  showOnlyRoutes: ["green"]
+}
+```
+
+Use `hideRoutes` to remove matching routes from the display:
 
 ```js
 config: {
@@ -208,7 +230,7 @@ config: {
 }
 ```
 
-This hides routes such as `2 Green West`.
+Filters are case-insensitive and can match part of the displayed route name. For example, `"green"` matches `2 Green West`.
 
 Use more specific filters when needed:
 
@@ -218,43 +240,40 @@ hideRoutes: ["2 Green West"]
 
 Avoid overly broad filters like `"2"` unless you intentionally want to match any route name containing `2`, such as `12 Lilac` or `21 Cardinal`.
 
-### Find your Stop ID
+## Find Your Stop ID
+
 To find your stop ID, visit [mycyride.com/arrivals](https://mycyride.com/arrivals). Choose a route that passes your stop, then choose the stop from the list. The stop ID is listed in bold after choosing a route and stop. In the image below, the stop ID is 2520.
 
-![CyRide Route Finder Website Image](EstimatedArrivalTimes.png)
+![CyRide route finder website image](EstimatedArrivalTimes.png)
 
-## Contributing
-PRs welcome!
+## What Changed From The Original Module
 
-To develop on your local machine, install this module like normal (you may like to clone your own fork's code). Then, start your magic mirror install by running `npm start &`. This will show node_helper output in the terminal. Then, access your magic mirror and make the magic happen!
+This fork keeps the original module name, MagicMirror structure, compact route display, single-stop config compatibility, and route color style where practical. The main changes are focused on restoring compatibility with the current MyCyRide data source and adding configuration options for modern use.
 
-### Upcoming Features
-
-- [ ] Don't paginate when only one or two routes
-- [ ] Allow monitoring multiple stops
-
-## Modernization Notes
-
-This fork updates the original module to work with the current MyCyRide site.
-
-The original module requested:
+The original module requested arrival data from:
 
 ```text
 https://mycyride.com/Stop/{stopID}/Arrivals?customerID={customerID}
 ```
 
-That endpoint now returns the MyCyRide web app HTML instead of the JSON shape the module expected. The current implementation uses the newer RTPI API path through `node_helper.js`:
+That endpoint now returns the MyCyRide web app HTML instead of the JSON shape the module expected. This fork now uses the current MyCyRide RTPI API path through `node_helper.js`:
 
 ```text
 https://mycyride.com/api/rtpi?path=stops/rtpi/{stopID}/arrivals
 ```
 
-The helper exposes a local MagicMirror route:
+This fork also adds:
 
-```text
-/MMM-CyRide/arrivals?stopID={stopID}&customerID={customerID}
-```
-
-The frontend calls that local route once for each configured stop, groups each returned flat arrival list by route, converts `secondsToArrival` into minutes, and renders the configured number of arrivals per route under each stop label.
+- A local MagicMirror helper route at `/MMM-CyRide/arrivals`
+- Support for labeled multiple stops
+- Configurable refresh, rotation, paging, and route filtering
+- `node-fetch@2` as an explicit npm dependency
+- Safer frontend state storage using `this.cyRideStops`
 
 Important implementation detail: the module stores arrival state in `this.cyRideStops`, not `this.data`. MagicMirror uses `this.data` internally for module metadata such as position, so overwriting it can break rendering.
+
+## Contributing
+
+PRs welcome.
+
+To develop locally, clone your fork into a MagicMirror `modules` directory, run `npm install`, and start MagicMirror from the main MagicMirror folder. `node_helper.js` logs will appear in the terminal running MagicMirror.
