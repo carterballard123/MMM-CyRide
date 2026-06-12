@@ -18,12 +18,29 @@ To finish adding the module, follow the configuration settings below.
 
 Add the following code to your Magic Mirror's `config.js` file's `modules` array.
 
-```
+```js
 {
   module: "MMM-CyRide",
   position: "top_left", // customize to the position you want
   config: {
-    stopID: "ID OF STOP TO MONITOR",
+    stops: [
+      { stopID: "2501", label: "Home" },
+      { stopID: "2520", label: "Campus" }
+    ],
+    customerID: "187"
+  }
+}
+```
+
+For a single stop, the older `stopID` config style is still supported:
+
+```js
+{
+  module: "MMM-CyRide",
+  position: "top_left",
+  config: {
+    stopID: "2501",
+    stopLabel: "Home",
     customerID: "187"
   }
 }
@@ -33,7 +50,9 @@ Add the following code to your Magic Mirror's `config.js` file's `modules` array
 
 | Option | Default | Description |
 | --- | --- | --- |
-| `stopID` | `"5108903"` | CyRide RTPI stop number to monitor. |
+| `stops` | `undefined` | Preferred multi-stop config. Each stop should include `stopID` and can include a display `label`. |
+| `stopID` | `"5108903"` | Legacy single-stop CyRide RTPI stop number. Used when `stops` is not configured. |
+| `stopLabel` | `"Stop {stopID}"` | Optional label for the legacy single-stop config. |
 | `customerID` | `"187"` | MyCyRide customer ID. Kept configurable for compatibility with the MyCyRide API. |
 
 ### Find your Stop ID
@@ -73,6 +92,6 @@ The helper exposes a local MagicMirror route:
 /MMM-CyRide/arrivals?stopID={stopID}&customerID={customerID}
 ```
 
-The frontend calls that local route, groups the returned flat arrival list by route, converts `secondsToArrival` into minutes, and renders the next two arrivals per route.
+The frontend calls that local route once for each configured stop, groups each returned flat arrival list by route, converts `secondsToArrival` into minutes, and renders the next two arrivals per route under each stop label.
 
 Important implementation detail: the module stores arrival state in `this.cyRideRoutes`, not `this.data`. MagicMirror uses `this.data` internally for module metadata such as position, so overwriting it can break rendering.

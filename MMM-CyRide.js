@@ -2,7 +2,7 @@ Module.register("MMM-CyRide", {
   defaults: { stopID: "5108903", customerID: "187" },
   start: function () {
     this.page = 0;
-    this.cyRideRoutes = null;
+    this.cyRideStops = null;
     this.error = null;
     this.isLoadingCyRideData = false;
 
@@ -13,26 +13,39 @@ Module.register("MMM-CyRide", {
       this.isLoadingCyRideData = true;
 
       try {
-        if (!Array.isArray(this.cyRideRoutes)) {
+        if (!Array.isArray(this.cyRideStops)) {
           this.error = "Loading CyRide arrivals...";
           this.updateDom();
         }
 
-        const params = new URLSearchParams({
-          stopID: this.config.stopID,
-          customerID: this.config.customerID
-        });
+        const stops = this.getConfiguredStops();
+        const stopResults = await Promise.all(
+          stops.map(async (stop) => {
+            const params = new URLSearchParams({
+              stopID: stop.stopID,
+              customerID: this.config.customerID
+            });
 
-        const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
-        if (!response.ok) {
-          throw new Error(`local route returned ${response.status}`);
-        }
+            const response = await fetch(`/MMM-CyRide/arrivals?${params}`);
+            if (!response.ok) {
+              throw new Error(`local route returned ${response.status}`);
+            }
 
-        const payload = await response.json();
-        this.handleCyRidePayload(payload);
+            const payload = await response.json();
+            return {
+              label: stop.label,
+              stopID: stop.stopID,
+              routes: this.parseCyRidePayload(payload)
+            };
+          })
+        );
+
+        this.cyRideStops = stopResults;
+        this.error = null;
+        this.updateDom();
       } catch (e) {
-        if (!Array.isArray(this.cyRideRoutes)) this.cyRideRoutes = null;
-        this.error = Array.isArray(this.cyRideRoutes)
+        if (!Array.isArray(this.cyRideStops)) this.cyRideStops = null;
+        this.error = Array.isArray(this.cyRideStops)
           ? null
           : `Unable to load CyRide arrivals: ${e.message}`;
         this.updateDom();
@@ -50,8 +63,25 @@ Module.register("MMM-CyRide", {
     }, 1 * 60 * 1000);
 
     setInterval(() => {
-      if (Array.isArray(this.cyRideRoutes)) this.updateDom(1000);
+      if (Array.isArray(this.cyRideStops)) this.updateDom(1000);
     }, 5000); // cycle displayed data every 5 seconds
+  },
+  getConfiguredStops: function () {
+    if (Array.isArray(this.config.stops) && this.config.stops.length > 0) {
+      return this.config.stops
+        .filter((stop) => stop && stop.stopID)
+        .map((stop) => ({
+          stopID: String(stop.stopID),
+          label: stop.label || `Stop ${stop.stopID}`
+        }));
+    }
+
+    return [
+      {
+        stopID: String(this.config.stopID),
+        label: this.config.stopLabel || `Stop ${this.config.stopID}`
+      }
+    ];
   },
   getDom: function () {
     var wrapper = document.createElement("div");
@@ -62,7 +92,7 @@ Module.register("MMM-CyRide", {
       return wrapper;
     }
 
-    if (!Array.isArray(this.cyRideRoutes)) {
+    if (!Array.isArray(this.cyRideStops)) {
       wrapper.innerHTML = "Waiting for CyRide data...";
       return wrapper;
     }
@@ -72,63 +102,64 @@ Module.register("MMM-CyRide", {
     title.style = "margin:0px;";
     wrapper.appendChild(title);
 
-    this.cyRideRoutes.map((route, i) => {
-      if (i % 2 !== this.page) return;
-      let upcomingStops = [];
-      route.stops.forEach((s) => {
-        if (s.Minutes >= 0 && s.Minutes < 60) upcomingStops.push(s); // don't show stops with negative time or longer than an hour away
+    this.cyRideStops.forEach((stopGroup) => {
+      const stopHeader = document.createElement("h5");
+      stopHeader.innerHTML = stopGroup.label;
+      stopHeader.style = "margin:8px 0px 2px 0px;";
+      wrapper.appendChild(stopHeader);
+
+      stopGroup.routes.forEach((route, i) => {
+        if (i % 2 !== this.page) return;
+        let upcomingStops = [];
+        route.stops.forEach((s) => {
+          if (s.Minutes >= 0 && s.Minutes < 60) upcomingStops.push(s); // don't show stops with negative time or longer than an hour away
+        });
+        if (upcomingStops.length === 0) return;
+        const container = document.createElement("div");
+        const header = document.createElement("h5");
+        header.style = "margin:0px;";
+        const detailsContainer = document.createElement("div");
+        const divider = document.createElement("hr");
+        divider.style = "margin-top:0px;margin-bottom:5px;";
+
+        upcomingStops.forEach((stop) => {
+          if (stop.Time <= 0 || stop.Time > 60) return;
+          const timeDetails = document.createElement("p");
+          timeDetails.style = "font-size:20px;margin:0px;line-height:normal;";
+          timeDetails.innerHTML = `${stop.Time} min${
+            stop.Time === 1 ? "" : "s"
+          } | ${stop.ArriveTime}${stop.IsLastStop ? " - LAST STOP" : ""}`;
+          detailsContainer.appendChild(timeDetails);
+        });
+
+        let color = route.color || getColor(route.routeName);
+        const box = document.createElement("div");
+        box.style = `height:20px;width:20px;background-color:${color};display:inline-block;`;
+
+        header.innerHTML = route.routeName;
+        header.style =
+          "display:inline-block;margin-left:12px;margin-top:0px;margin-bottom:0px;text-overflow:ellipsis;white-space:nowrap;width:270px;overflow:hidden;vertical-align:bottom";
+        container.appendChild(box);
+        container.appendChild(header);
+        container.appendChild(divider);
+        container.appendChild(detailsContainer);
+        wrapper.appendChild(container);
       });
-      if (upcomingStops.length === 0) return;
-      const container = document.createElement("div");
-      const header = document.createElement("h5");
-      header.style = "margin:0px;";
-      const detailsContainer = document.createElement("div");
-      const divider = document.createElement("hr");
-      divider.style = "margin-top:0px;margin-bottom:5px;";
-
-      upcomingStops.forEach((stop) => {
-        if (stop.Time <= 0 || stop.Time > 60) return;
-        const timeDetails = document.createElement("p");
-        timeDetails.style = "font-size:20px;margin:0px;line-height:normal;";
-        timeDetails.innerHTML = `${stop.Time} min${
-          stop.Time === 1 ? "" : "s"
-        } | ${stop.ArriveTime}${stop.IsLastStop ? " - LAST STOP" : ""}`;
-        detailsContainer.appendChild(timeDetails);
-      });
-
-      let color = route.color || getColor(route.routeName);
-      const box = document.createElement("div");
-      box.style = `height:20px;width:20px;background-color:${color};display:inline-block;`;
-
-      header.innerHTML = route.routeName;
-      header.style =
-        "display:inline-block;margin-left:12px;margin-top:0px;margin-bottom:0px;text-overflow:ellipsis;white-space:nowrap;width:270px;overflow:hidden;vertical-align:bottom";
-      container.appendChild(box);
-      container.appendChild(header);
-      container.appendChild(divider);
-      container.appendChild(detailsContainer);
-      wrapper.appendChild(container);
     });
     if (this.page === 1) this.page = 0;
     else if (this.page === 0) this.page = 1;
     return wrapper;
   },
-  handleCyRidePayload: function (payload) {
+  parseCyRidePayload: function (payload) {
     let stage = "checking payload";
 
     try {
       if (payload && payload.error) {
-        this.cyRideRoutes = null;
-        this.error = payload.message;
-        this.updateDom();
-        return;
+        throw new Error(payload.message);
       }
 
       if (!Array.isArray(payload)) {
-        this.cyRideRoutes = null;
-        this.error = "CyRide payload was not an array";
-        this.updateDom();
-        return;
+        throw new Error("CyRide payload was not an array");
       }
 
       stage = "grouping arrivals";
@@ -164,19 +195,13 @@ Module.register("MMM-CyRide", {
 
       stage = "saving parsed data";
       // Keep the next two arrivals per route, matching the module's original behavior.
-      this.cyRideRoutes = groupedRoutes.map((route) => ({
+      return groupedRoutes.map((route) => ({
         routeName: route.routeName,
         color: route.color,
         stops: Array.isArray(route.stops) ? route.stops.slice(0, 2) : []
       }));
-
-      this.error = null;
-      this.updateDom();
-      return;
     } catch (e) {
-      this.cyRideRoutes = null;
-      this.error = `CyRide frontend error at ${stage}: ${e.message}`;
-      this.updateDom();
+      throw new Error(`CyRide frontend error at ${stage}: ${e.message}`);
     }
   }
 });
