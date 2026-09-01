@@ -11,7 +11,8 @@ Module.register("MMM-CyRide", {
     showOnlyRoutes: [],
     routePageMode: "combined",
     maxRoutesPerStopPerPage: 1,
-    maxRoutesPerPage: 2
+    maxRoutesPerPage: 2,
+    dividerWidth: 300
   },
   start: function () {
     this.page = 0;
@@ -136,7 +137,8 @@ Module.register("MMM-CyRide", {
       header.style = "margin:0px;";
       const detailsContainer = document.createElement("div");
       const divider = document.createElement("hr");
-      divider.style = "margin-top:0px;margin-bottom:5px;";
+      const dividerWidth = Number(this.config.dividerWidth) || 300;
+      divider.style = `margin-top:0px;margin-bottom:5px;width:${dividerWidth}px;`;
 
       upcomingStops.forEach((stop) => {
         if (stop.Time <= 0 || stop.Time > 60) return;

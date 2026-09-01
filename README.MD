@@ -91,6 +91,7 @@ For a single stop, the older `stopID` config style is still supported:
 | `maxRoutesPerStopPerPage` | `1` | In `"perStop"` mode, number of route blocks to show for each stop before rotating. |
 | `showOnlyRoutes` | `[]` | Show only routes using case-insensitive partial matches against the displayed route name. |
 | `hideRoutes` | `[]` | Hide routes using case-insensitive partial matches against the displayed route name. |
+| `dividerWidth` | `300` | Width in pixels of the divider line between each route header and its arrival times. Adjust to match how much horizontal space your route names and times actually take up. |
 
 ## Example Configs
 
