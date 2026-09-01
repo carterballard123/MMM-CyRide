@@ -138,7 +138,7 @@ Module.register("MMM-CyRide", {
       const detailsContainer = document.createElement("div");
       const divider = document.createElement("hr");
       const dividerWidth = Number(this.config.dividerWidth) || 300;
-      divider.style = `margin-top:0px;margin-bottom:5px;width:${dividerWidth}px;`;
+      divider.style = `margin-top:0px;margin-bottom:5px;margin-left:0px;margin-right:auto;width:${dividerWidth}px;`;
 
       upcomingStops.forEach((stop) => {
         if (stop.Time <= 0 || stop.Time > 60) return;
