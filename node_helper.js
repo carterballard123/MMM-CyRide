@@ -6,7 +6,13 @@ const getData = async (self) => {
     const response = await fetch(
       `https://mycyride.com/api/rtpi?path=${encodeURIComponent(
         `stops/rtpi/${self.STOP_ID}/arrivals`
-      )}`
+      )}`,
+      {
+        headers: {
+          Origin: "https://mycyride.com",
+          Referer: "https://mycyride.com/",
+        },
+      }
     );
     console.log(
       "MMM-CyRide fetch status:",
